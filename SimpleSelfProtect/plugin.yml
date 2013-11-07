@@ -1,0 +1,10 @@
+name: SimpleSelfProtect
+main: gigabytedx.Main
+version: 1.0
+description: >
+             Players can protect their stuff simply by placing a block.
+commands:
+  friend:
+  unfriend:
+  accept:
+softdepend: [WorldGuard, WorldEdit]
