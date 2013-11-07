@@ -4,6 +4,7 @@ import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
+
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -25,7 +26,7 @@ public class Main extends JavaPlugin implements Listener {
 	boolean					worldguardLoaded	= false;
 	Material				material;
 	Material				craftingMaterial;
-	static List<region>		regions				= new ArrayList<region>();
+	static List<RegionData>		regions				= new ArrayList<RegionData>();
 	boolean					reload				= true;
 	
 

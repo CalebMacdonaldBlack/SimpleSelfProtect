@@ -2,13 +2,10 @@ package gigabytedx;
 
 import java.util.ArrayList;
 import java.util.List;
-
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.configuration.Configuration;
-import org.bukkit.entity.Player;
 import org.bukkit.plugin.PluginDescriptionFile;
-
 import com.sk89q.worldedit.BlockVector;
 
 public class StaticVariables {
@@ -22,8 +19,6 @@ public class StaticVariables {
 	public static int			durationBetweenDataBackup;
 	static List<region>			regions	= new ArrayList<region>();
 	public static PluginDescriptionFile	pdfFile	= plugin.getDescription();
-	public static ArrayList<Player>		pendingAccept		= new ArrayList<Player>();
-	public static ArrayList<Player>		friendSender		= new ArrayList<Player>();
 	public static String regionsSaveName = "regions";
 
 	public StaticVariables(Main plugin) {
@@ -34,12 +29,6 @@ public class StaticVariables {
 		// Initialize variables;
 		setVariables();
 
-	}
-	
-	
-	public static ArrayList<Player> getPendingAccept() {
-	
-		return pendingAccept;
 	}
 
 	
@@ -54,24 +43,6 @@ public class StaticVariables {
 	public static void setRegionsSaveName(String regionsSaveName) {
 	
 		StaticVariables.regionsSaveName = regionsSaveName;
-	}
-
-
-	public static void setPendingAccept(ArrayList<Player> pendingAccept) {
-	
-		StaticVariables.pendingAccept = pendingAccept;
-	}
-
-	
-	public static ArrayList<Player> getFriendSender() {
-	
-		return friendSender;
-	}
-
-	
-	public static void setFriendSender(ArrayList<Player> friendSender) {
-	
-		StaticVariables.friendSender = friendSender;
 	}
 
 	private void setVariables() {
@@ -93,7 +64,7 @@ public class StaticVariables {
 
 	}
 	
-	public BlockVector getVector2(Block block) {
+	public static BlockVector getVector2(Block block) {
 
 		BlockVector bv2 = new BlockVector(block.getLocation().getBlockX() + 20, 256, block.getLocation()
 				.getBlockZ() + 20);
@@ -101,7 +72,7 @@ public class StaticVariables {
 
 	}
 
-	public BlockVector getVector1(Block block) {
+	public static BlockVector getVector1(Block block) {
 
 		BlockVector bv1 = new BlockVector(block.getLocation().getBlockX() - 20, 0, block.getLocation()
 				.getBlockZ() - 20);

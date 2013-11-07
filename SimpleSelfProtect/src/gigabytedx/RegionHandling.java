@@ -6,6 +6,8 @@ import java.util.ConcurrentModificationException;
 import java.util.List;
 import java.util.Map;
 
+import net.minecraft.v1_6_R3.org.bouncycastle.jcajce.provider.asymmetric.dsa.DSASigner.stdDSA;
+
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -15,6 +17,7 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 
 import com.sk89q.worldedit.BlockVector;
+import com.sk89q.worldedit.regions.Region;
 import com.sk89q.worldguard.LocalPlayer;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 import com.sk89q.worldguard.domains.DefaultDomain;
@@ -138,34 +141,13 @@ public class RegionHandling {
 	
 
 	public static void prepareUnfriend(LocalPlayer lp, Player player, String[] args) {
-
-		if (unfriend(lp, args[0])) {
+		
+		//execute method
+		removeFriendFromRegion(lp, args[0]);
+		
+			//send message to both players
 			Bukkit.getPlayer(lp.getName()).sendMessage(	ChatColor.GOLD + "You have unfriended " + ChatColor.BLUE + args[0]	+ ChatColor.GOLD + ".");
 			Bukkit.getPlayer(args[0]).sendMessage(ChatColor.RED + "You have been unfriended by " + ChatColor.BLUE + lp.getName()+ ChatColor.RED + ".");
-		} else
-			Bukkit.getPlayer(lp.getName()).sendMessage(
-					ChatColor.RED + "Player " + ChatColor.BLUE + args[0] + ChatColor.RED + " not found.");
-
-	}
-
-	public static void sendRequest(LocalPlayer lp, Player player, String[] args) {
-
-		StaticVariables.getPendingAccept().add(StaticVariables.getPendingAccept().size(), Bukkit.getPlayer(args[0]));
-		StaticVariables.getFriendSender().add(StaticVariables.getFriendSender().size(), player);
-		Bukkit.getPlayer(lp.getName()).sendMessage(
-				ChatColor.GOLD + "You sent a request to " + ChatColor.BLUE + args[0] + ChatColor.GOLD + ".");
-		Bukkit.getPlayer(args[0]).sendMessage(
-				ChatColor.BLUE + player.getName() + ChatColor.GOLD
-						+ " sent you a request to be join his team! Type /accept to join!");
-
-	}
-
-	public static void acceptRequest(LocalPlayer lp, Player player) {
-
-		friend(lp, StaticVariables.getFriendSender().get(StaticVariables.getPendingAccept().indexOf(player)).getName());
-		StaticVariables.getFriendSender().remove(StaticVariables.getPendingAccept().indexOf(player));
-		StaticVariables.getPendingAccept().remove(player);
-
 	}
 
 	public static boolean playeronlineTest(String args) {
@@ -176,7 +158,7 @@ public class RegionHandling {
 		} catch (NullPointerException n) {
 			return false;
 		}
-	}
+	} 
 
 	private static void friend(LocalPlayer lp, String args) {
 
@@ -185,30 +167,7 @@ public class RegionHandling {
 
 	}
 
-	private static boolean unfriend(LocalPlayer lp, String args) {
-
-		List<ProtectedRegion> list = new ArrayList<ProtectedRegion>();
-		if (this.getConfig().getList(lp.getName()).contains(lp.getName()))
-			if (removeBuildPerms(list, lp, args))
-				return true;
-		return false;
-	}
-
-	private static boolean removeBuildPerms(List<ProtectedRegion> list, LocalPlayer lp, String args) {
-
-		if (getConfig().contains(args)) {
-			this.getConfig().getList(lp.getName()).remove((args));
-			this.getConfig().set(args + "group", args);
-			this.saveConfig();
-
-			removeFriendFromRegion(lp, args);
-			return true;
-		}
-		return false;
-
-	}
-
-	private void removeFriendFromRegion(LocalPlayer lp, String args) {
+	private static void removeFriendFromRegion(LocalPlayer lp, String args) {
 
 		//create hashmap object to hold regions
 		Map<String, ProtectedRegion> regions;
@@ -221,7 +180,7 @@ public class RegionHandling {
 			for (String s : regions.keySet()) {
 				
 				if (WorldGuardPlugin.inst().getRegionManager(x).getRegion(s).isOwner(WorldGuardPlugin.inst().wrapPlayer(Bukkit.getPlayer(args)))){
-					WorldGuardPlugin.inst().getRegionManager(x).getRegion(s).getMembers().removePlayer(name);
+					WorldGuardPlugin.inst().getRegionManager(x).getRegion(s).getMembers().removePlayer(args);
 				}
 
 			}
@@ -254,15 +213,16 @@ public class RegionHandling {
 	
 	private void deleteClaimedLand(BlockBreakEvent e) {
 
-		if (checkPlayerHasSavedData(e.getPlayer())) {
+		if (getRegionsCount(e.getPlayer()) < regionCountAllowence(e.getPlayer())) {
 
 			ProtectedCuboidRegion pcr = new ProtectedCuboidRegion(e.getBlock().getLocation().toString(),
-					getVector1(e.getBlock()), getVector2(e.getBlock()));
+					StaticVariables.getVector1(e.getBlock()), StaticVariables.getVector2(e.getBlock()));
 			WorldGuardPlugin.inst().getRegionManager(e.getBlock().getWorld()).removeRegion(pcr.getId());
 			removeRegion(pcr);
 			e.getPlayer().sendMessage(
 					ChatColor.GOLD + "You destroyed a claim stone. This area is no longer protected!");
-		}
+		}else
+			e.getPlayer().sendMessage(ChatColor.RED + "You have too many regions, you cannot claim anymore until you unclaim some");
 	}
 
 	public boolean isProtected(Location l, BlockPlaceEvent e) {
@@ -290,10 +250,10 @@ public class RegionHandling {
 	
 	private void landClaimTest(BlockPlaceEvent e) {
 
-		if (isLandClaimed(e.getBlock().getLocation(), e) == false && e.getBlock().getType() == material
-				|| e.getBlock().getType() == material && isPlayerOwner(e))
+		if (isLandClaimed(e.getBlock().getLocation(), e) == false && e.getBlock().getType() == StaticVariables.getMaterial()
+				|| e.getBlock().getType() == StaticVariables.getMaterial() && isPlayerOwner(e))
 			claimArea(e);
-		else if (e.getBlock().getType() == material) {
+		else if (e.getBlock().getType() == StaticVariables.getMaterial()) {
 
 			e.getPlayer().sendMessage(ChatColor.RED + "You cannot claim on other peoples land!");
 			e.setCancelled(true);
@@ -314,10 +274,8 @@ public class RegionHandling {
 	}
 
 	private void claimArea(BlockPlaceEvent e) {
-
-		createList(e.getPlayer().getName());
 		ProtectedCuboidRegion pcr = new ProtectedCuboidRegion(e.getBlock().getLocation().toString(),
-				getVector1(e.getBlock()), getVector2(e.getBlock()));
+				StaticVariables.getVector1(e.getBlock()), StaticVariables.getVector2(e.getBlock()));
 		createRegion(pcr, e);
 
 	}
@@ -328,7 +286,7 @@ public class RegionHandling {
 				.overlapsUnownedRegion(pcr, WorldGuardPlugin.inst().wrapPlayer(e.getPlayer()))) {
 			pcr.setFlag(DefaultFlag.FAREWELL_MESSAGE, ChatColor.GRAY + "You have left a claimed area!");
 			pcr.setFlag(DefaultFlag.GREET_MESSAGE, ChatColor.GRAY + "You have entered a claimed area!");
-			addOwners(pcr, e.getPlayer().getName());
+			addOwners(pcr, e.getPlayer());
 			WorldGuardPlugin.inst().getRegionManager(e.getBlock().getWorld()).addRegion(pcr);
 			saveRegion(pcr, e.getBlock().getWorld().getName());
 			e.getPlayer().sendMessage(ChatColor.GOLD + "You have successfully claimed this area!");
@@ -339,15 +297,37 @@ public class RegionHandling {
 
 	}
 
-	private void addOwners(ProtectedCuboidRegion pcr, String string) {
-
-		createList(string);
-		if (hasGroup(string)) {
-			pcr.setOwners(getDomain((String) this.getConfig().get(string + "group")));
-		} else {
-			this.getConfig().set(string + "group", string);
-			this.saveConfig();
-			pcr.setOwners(getDomain((String) this.getConfig().get(string + "group")));
+	private void addOwners(ProtectedCuboidRegion pcr, Player player) {
+			pcr.getMembers().addPlayer(player.getName());
 		}
+	
+	private int regionCountAllowence(Player player){
+		return StaticVariables.getConf().getInt("regionLimit");
 	}
+	private int getRegionsCount(Player player){
+		
+		//initialize region count
+		int regionCount = 0;
+		
+		//create hashmap object to hold regions
+		Map<String, ProtectedRegion> regions;
+
+		//loop through each world and get region manager
+		for (World x : Bukkit.getWorlds()) {
+			regions = WorldGuardPlugin.inst().getRegionManager(x).getRegions();
+			
+			//loop through each region for that world 
+			for (String s : regions.keySet()) {
+				
+				//check if player sending command owns the region
+				if (WorldGuardPlugin.inst().getRegionManager(x).getRegion(s).isOwner(WorldGuardPlugin.inst().wrapPlayer(player))) {
+					
+					//append region count 
+					regionCount++;
+				}
+			}
+		}
+		return regionCount;
+	}
+	
 }
