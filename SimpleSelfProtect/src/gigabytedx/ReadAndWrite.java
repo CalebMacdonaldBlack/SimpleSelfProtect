@@ -32,14 +32,14 @@ public class ReadAndWrite {
 			Main.sendDebugInfo("Can't find region data file. Attepting to create a new one");
 
 			try {
-				
-				//attempt to write regions object to file
+
+				// attempt to write regions object to file
 				save("regions");
 				Main.sendDebugInfo("New region data file created successfully!");
-				
+
 			} catch (FileNotFoundException e1) {
-				
-				//if FileNotFoundException send error msg to console
+
+				// if FileNotFoundException send error msg to console
 				Main.sendSevereInfo("A problem occurred attempting to read from the region data file : FileNotFoundException");
 				e1.printStackTrace();
 			}

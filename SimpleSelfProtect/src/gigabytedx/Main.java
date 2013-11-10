@@ -17,7 +17,7 @@ import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 public class Main extends JavaPlugin {
 
 	public final Logger	logger				= Logger.getLogger("Minecraft");
-	static String				pluginName;
+	static String		pluginName;
 	public static Main	plugin;
 	boolean				f					= false;
 	int					regionLimit;
@@ -54,8 +54,8 @@ public class Main extends JavaPlugin {
 
 		// Initialize Variables
 		new StaticVariables(this);
-		
-		//get region data from file
+
+		// get region data from file
 		ReadAndWrite.writeFile();
 		// initialize scheduled tasks
 		new SchedualedTasks(this);

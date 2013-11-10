@@ -12,12 +12,12 @@ public class StaticVariables {
 	public static int			regionLimit;
 	public static Material		material;
 	public static Material		craftingMaterial;
-	public static Main					plugin;
+	public static Main			plugin;
 	public static boolean		debugModeEnabled;
 	public static Configuration	conf;
 	public static int			durationBetweenDataBackup;
-	static List<RegionData>			regions	= new ArrayList<RegionData>();
-	public static String regionsSaveName = "regions";
+	static List<RegionData>		regions			= new ArrayList<RegionData>();
+	public static String		regionsSaveName	= "regions";
 
 	public StaticVariables(Main plugin) {
 
@@ -29,17 +29,13 @@ public class StaticVariables {
 
 	}
 
-	
-	
 	public static String getRegionsSaveName() {
-	
+
 		return regionsSaveName;
 	}
 
-
-	
 	public static void setRegionsSaveName(String regionsSaveName) {
-	
+
 		StaticVariables.regionsSaveName = regionsSaveName;
 	}
 
@@ -61,9 +57,10 @@ public class StaticVariables {
 		durationBetweenDataBackup = conf.getInt("durationBetweenDataBackupInSeconds");
 
 	}
-	
+
 	public static BlockVector getVector2(Block block) {
 
+		//return max block vector 20 blocks around the block
 		BlockVector bv2 = new BlockVector(block.getLocation().getBlockX() + 20, 256, block.getLocation()
 				.getBlockZ() + 20);
 		return bv2;
@@ -72,25 +69,22 @@ public class StaticVariables {
 
 	public static BlockVector getVector1(Block block) {
 
+		//return min block vector 20 blocks around the block
 		BlockVector bv1 = new BlockVector(block.getLocation().getBlockX() - 20, 0, block.getLocation()
 				.getBlockZ() - 20);
 		return bv1;
 
 	}
 
-	
 	public static List<RegionData> getRegions() {
-	
+
 		return regions;
 	}
 
-	
 	public static void setRegions(List<RegionData> regions) {
-	
+
 		StaticVariables.regions = regions;
 	}
-
-	
 
 	public static boolean isDebugModeEnabled() {
 
@@ -121,6 +115,5 @@ public class StaticVariables {
 
 		return craftingMaterial;
 	}
-	
-	
+
 }

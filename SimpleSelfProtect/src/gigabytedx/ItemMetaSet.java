@@ -7,11 +7,11 @@ import org.bukkit.ChatColor;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
-
 public class ItemMetaSet {
 
 	public static ItemMeta getMeta() {
 
+		// return meta for the claimstone
 		ItemStack is = new ItemStack(StaticVariables.material);
 		ItemMeta meta = is.getItemMeta();
 		meta.setDisplayName(ChatColor.GOLD + "Claim Stone");
