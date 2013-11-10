@@ -16,7 +16,7 @@ public class ReadAndWrite {
 		writeFile();
 	}
 
-	private void writeFile() {
+	public static void writeFile() {
 
 		try {
 
@@ -92,7 +92,7 @@ public class ReadAndWrite {
 	}
 
 	@SuppressWarnings("unchecked")
-	public void read(String fileName) throws FileNotFoundException {
+	public static void read(String fileName) throws FileNotFoundException {
 
 		// prepare to read file
 		FileInputStream fin = new FileInputStream(fileName);
@@ -103,7 +103,7 @@ public class ReadAndWrite {
 			ois = new ObjectInputStream(fin);
 			try {
 				// attempt to save data from file to object.
-				StaticVariables.setRegions((List<region>) ois.readObject());
+				StaticVariables.setRegions((List<RegionData>) ois.readObject());
 				Main.sendDebugInfo("Region data accessed successfully!");
 
 			} catch (ClassNotFoundException e) {

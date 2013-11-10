@@ -1,13 +1,8 @@
 package gigabytedx;
 
 import java.io.FileNotFoundException;
-import java.util.ArrayList;
 import java.util.ConcurrentModificationException;
-import java.util.List;
 import java.util.Map;
-
-import net.minecraft.v1_6_R3.org.bouncycastle.jcajce.provider.asymmetric.dsa.DSASigner.stdDSA;
-
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -15,9 +10,7 @@ import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
-
 import com.sk89q.worldedit.BlockVector;
-import com.sk89q.worldedit.regions.Region;
 import com.sk89q.worldguard.LocalPlayer;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 import com.sk89q.worldguard.domains.DefaultDomain;
@@ -32,33 +25,23 @@ public class RegionHandling {
 	public static void setRegions() {
 
 		//loop through all the regions in the regions object retrieved from the data file and create them
-		for (region r : StaticVariables.getRegions()) {
+		for (RegionData r : StaticVariables.getRegions()) {
 			
 			//create a protected cuboid region to hold all the region data
-			ProtectedCuboidRegion pcr;
+			ProtectedCuboidRegion pcr = new ProtectedCuboidRegion(r.getName(), new BlockVector(r.getX1(), r.getY1(), r.getZ1()),new BlockVector(r.getX2(), r.getY2(), r.getZ2()));
 			try {
-				
-				//attempt to set regions
-				WorldGuardPlugin.inst().getRegionManager(Bukkit.getWorld(r.getWorld())).addRegion(
-								pcr = new ProtectedCuboidRegion(r.getName(), new BlockVector(r.getX1(), r.getY1(), r.getZ1()),new BlockVector(r.getX2(), r.getY2(), r.getZ2())));
-
-				//create object to hold players that have permission to build in the region
-				DefaultDomain owners = new DefaultDomain();
-				DefaultDomain members = new DefaultDomain();
 				
 				//add the owners to the default domain object from regions object that was retrieved from the save file
 				for (String s : r.getOwners()) {
-					owners.addPlayer(s);
+					pcr.getOwners().addPlayer(s);
 				}
 				
 				//add members to the default domain object from regions object that was retrieved from the save file
 				for (String s : r.getMembers()) {
-					members.addPlayer(s);
+					pcr.getMembers().addPlayer(s);
 				}
+				WorldGuardPlugin.inst().getRegionManager(Bukkit.getWorld(r.getWorld())).addRegion(pcr);
 				
-				//set default domain of owners to their region
-				pcr.setOwners(owners);
-				pcr.setOwners(members);
 				
 			} catch (NullPointerException e) {
 				//if worldguard was not loaded, reload bukkit
@@ -68,15 +51,19 @@ public class RegionHandling {
 				
 				//start timer that reloads the plugins
 				SchedualedTasks.runReload();
+			} catch (IllegalArgumentException e){
+				Main.sendDebugInfo("Region data file is empty. No data has been loaded");
+				break;
 			}
 		}
 
 	}
 	
-	public void saveRegion(ProtectedCuboidRegion pcr, String world) {
+	public static void saveRegion(ProtectedCuboidRegion pcr, String world) {
 
 		//set first vector
 		double x1 = pcr.getMinimumPoint().getX();
+		
 		double y1 = pcr.getMinimumPoint().getY();
 		double z1 = pcr.getMinimumPoint().getZ();
 
@@ -89,9 +76,10 @@ public class RegionHandling {
 		String name = pcr.getId();
 		DefaultDomain owners = pcr.getOwners();
 		DefaultDomain members = pcr.getMembers();
-
+		
 		//add region to regions object
-		StaticVariables.regions.add(new region(world, x1, y1, z1, x2, y2, z2, name, owners.getPlayers(), members.getPlayers()));
+		RegionData temp = new RegionData(world, x1, y1, z1, x2, y2, z2, name, owners.getPlayers(), members.getPlayers());
+		StaticVariables.regions.add(temp);
 		
 		
 		try {
@@ -105,12 +93,12 @@ public class RegionHandling {
 		}
 	}
 	
-	private void removeRegion(ProtectedCuboidRegion pcr) {
+	private static void removeRegion(ProtectedCuboidRegion pcr) {
 
 		try {
 			
 			//loop through all of the regions to find a specific one
-			for (region r : StaticVariables.regions) {
+			for (RegionData r : StaticVariables.regions) {
 				
 				//check to see if name of the current region in the loop matches the one pending deletion 
 				if (r.getName().equals(pcr.getId())) {
@@ -160,9 +148,12 @@ public class RegionHandling {
 		}
 	} 
 
-	private static void friend(LocalPlayer lp, String args) {
+	public static void friend(LocalPlayer lp, String args) {
 
+		//execute setfriend method that will add the friend to the players regions
 		setFriends(lp, args);
+		
+		//send message to player confirming the friend has been added
 		Bukkit.getPlayer(lp.getName()).sendMessage(ChatColor.GOLD + "You added " + args + " to your group!");
 
 	}
@@ -179,7 +170,8 @@ public class RegionHandling {
 			//loop through each region for that world 
 			for (String s : regions.keySet()) {
 				
-				if (WorldGuardPlugin.inst().getRegionManager(x).getRegion(s).isOwner(WorldGuardPlugin.inst().wrapPlayer(Bukkit.getPlayer(args)))){
+				//remove friend from any regions that the player is owner of
+				if (WorldGuardPlugin.inst().getRegionManager(x).getRegion(s).isOwner(lp)){
 					WorldGuardPlugin.inst().getRegionManager(x).getRegion(s).getMembers().removePlayer(args);
 				}
 
@@ -201,19 +193,16 @@ public class RegionHandling {
 			for (String s : regions.keySet()) {
 				
 				//check if player sending command owns the region
-				if (WorldGuardPlugin.inst().getRegionManager(x).getRegion(s).isOwner(WorldGuardPlugin.inst().wrapPlayer(Bukkit.getPlayer(args)))) {
+				if (WorldGuardPlugin.inst().getRegionManager(x).getRegion(s).isOwner(lp)) {
 					
 					//add the friend as a member to that region
-					DefaultDomain temp = WorldGuardPlugin.inst().getRegionManager(x).getRegion(s).getMembers();
-					temp.addPlayer(args);
+					WorldGuardPlugin.inst().getRegionManager(x).getRegion(s).getMembers().addPlayer(args);
 				}
 			}
 		}
 	}
 	
-	private void deleteClaimedLand(BlockBreakEvent e) {
-
-		if (getRegionsCount(e.getPlayer()) < regionCountAllowence(e.getPlayer())) {
+	public static void deleteClaimedLand(BlockBreakEvent e) {
 
 			ProtectedCuboidRegion pcr = new ProtectedCuboidRegion(e.getBlock().getLocation().toString(),
 					StaticVariables.getVector1(e.getBlock()), StaticVariables.getVector2(e.getBlock()));
@@ -221,11 +210,9 @@ public class RegionHandling {
 			removeRegion(pcr);
 			e.getPlayer().sendMessage(
 					ChatColor.GOLD + "You destroyed a claim stone. This area is no longer protected!");
-		}else
-			e.getPlayer().sendMessage(ChatColor.RED + "You have too many regions, you cannot claim anymore until you unclaim some");
 	}
 
-	public boolean isProtected(Location l, BlockPlaceEvent e) {
+	public static boolean isProtected(Location l, BlockPlaceEvent e) {
 
 		ApplicableRegionSet arSet = WorldGuardPlugin.inst().getRegionManager(e.getBlock().getWorld())
 				.getApplicableRegions(l);
@@ -235,7 +222,7 @@ public class RegionHandling {
 		return true;
 	}
 
-	public boolean isLandClaimed(Location l, BlockPlaceEvent e) {
+	public static boolean isLandClaimed(Location l, BlockPlaceEvent e) {
 
 		for (int x = (int) (l.getX() - 20); x <= l.getX() + 20; x++) {
 			for (int z = (int) (l.getZ() - 20); z <= l.getZ() + 20; z++) {
@@ -247,8 +234,8 @@ public class RegionHandling {
 		return false;
 
 	}
-	
-	private void landClaimTest(BlockPlaceEvent e) {
+	/*
+	public static void landClaimTest(BlockPlaceEvent e) {
 
 		if (isLandClaimed(e.getBlock().getLocation(), e) == false && e.getBlock().getType() == StaticVariables.getMaterial()
 				|| e.getBlock().getType() == StaticVariables.getMaterial() && isPlayerOwner(e))
@@ -260,9 +247,9 @@ public class RegionHandling {
 
 		}
 
-	}
+	}*/
 
-	private boolean isPlayerOwner(BlockPlaceEvent e) {
+	private static boolean isPlayerOwner(BlockPlaceEvent e) {
 
 		ApplicableRegionSet arSet = WorldGuardPlugin.inst().getRegionManager(e.getBlock().getWorld())
 				.getApplicableRegions(e.getBlock().getLocation());
@@ -273,38 +260,42 @@ public class RegionHandling {
 		return false;
 	}
 
-	private void claimArea(BlockPlaceEvent e) {
+	public static void claimArea(BlockPlaceEvent e) {
 		ProtectedCuboidRegion pcr = new ProtectedCuboidRegion(e.getBlock().getLocation().toString(),
 				StaticVariables.getVector1(e.getBlock()), StaticVariables.getVector2(e.getBlock()));
 		createRegion(pcr, e);
 
 	}
 
-	private void createRegion(ProtectedCuboidRegion pcr, BlockPlaceEvent e) {
+	private static void createRegion(ProtectedCuboidRegion pcr, BlockPlaceEvent e) {
 
-		if (!WorldGuardPlugin.inst().getRegionManager(e.getBlock().getWorld())
-				.overlapsUnownedRegion(pcr, WorldGuardPlugin.inst().wrapPlayer(e.getPlayer()))) {
+		if (!WorldGuardPlugin.inst().getRegionManager(e.getBlock().getWorld()).overlapsUnownedRegion(pcr, WorldGuardPlugin.inst().wrapPlayer(e.getPlayer()))) {
+			
 			pcr.setFlag(DefaultFlag.FAREWELL_MESSAGE, ChatColor.GRAY + "You have left a claimed area!");
 			pcr.setFlag(DefaultFlag.GREET_MESSAGE, ChatColor.GRAY + "You have entered a claimed area!");
-			addOwners(pcr, e.getPlayer());
+			pcr = addOwners(pcr, e.getPlayer());
+			System.out.println("sadfsfsfasfsdfa" + pcr.getOwners().getPlayers());
 			WorldGuardPlugin.inst().getRegionManager(e.getBlock().getWorld()).addRegion(pcr);
 			saveRegion(pcr, e.getBlock().getWorld().getName());
 			e.getPlayer().sendMessage(ChatColor.GOLD + "You have successfully claimed this area!");
 		} else {
 			e.getPlayer().sendMessage(ChatColor.RED + "You cannot claim on other peoples land!");
 			e.setCancelled(true);
+			e.getPlayer().updateInventory();
 		}
 
 	}
 
-	private void addOwners(ProtectedCuboidRegion pcr, Player player) {
-			pcr.getMembers().addPlayer(player.getName());
+	private static ProtectedCuboidRegion addOwners(ProtectedCuboidRegion pcr, Player player) {
+			pcr.getOwners().addPlayer(player.getName());
+			return pcr;
+			
 		}
 	
-	private int regionCountAllowence(Player player){
+	public static int regionCountAllowence(Player player){
 		return StaticVariables.getConf().getInt("regionLimit");
 	}
-	private int getRegionsCount(Player player){
+	public static int getRegionsCount(Player player){
 		
 		//initialize region count
 		int regionCount = 0;

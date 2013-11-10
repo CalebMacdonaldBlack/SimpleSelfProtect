@@ -3,6 +3,7 @@ package gigabytedx;
 import org.bukkit.ChatColor;
 import org.bukkit.block.Block;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPistonExtendEvent;
 import org.bukkit.event.block.BlockPistonRetractEvent;
@@ -13,13 +14,13 @@ import org.bukkit.event.player.PlayerPickupItemEvent;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 
 
-public class Events {
+public class Events implements Listener {
 
 	@EventHandler
 	public void onCraft(PrepareItemCraftEvent e) {
 
 		if (e.getInventory().getResult().getType().equals(StaticVariables.getMaterial())) {
-			e.getInventory().getResult().setItemMeta(getMeta());
+			e.getInventory().getResult().setItemMeta(ItemMetaSet.getMeta());
 		}
 	}
 
@@ -27,7 +28,7 @@ public class Events {
 	public void onPickUp(PlayerPickupItemEvent e) {
 
 		if (e.getItem().getItemStack().getType().equals(StaticVariables.getMaterial()))
-			e.getItem().getItemStack().setItemMeta(getMeta());
+			e.getItem().getItemStack().setItemMeta(ItemMetaSet.getMeta());
 	}
 
 	
@@ -51,12 +52,12 @@ public class Events {
 	
 	@EventHandler
 	public void onBlockPlace(BlockPlaceEvent e) {
+		
+		//if block placed is gold and player is not limited.
+		if (e.getBlock().getType().equals(StaticVariables.getMaterial()) && RegionHandling.getRegionsCount(e.getPlayer()) < RegionHandling.regionCountAllowence(e.getPlayer())) {
 
-		if (e.getBlock().getType().equals(StaticVariables.getMaterial())
-				&& WorldGuardPlugin.inst().getRegionManager(e.getBlock().getWorld())
-						.getRegionCountOfPlayer(WorldGuardPlugin.inst().wrapPlayer(e.getPlayer())) < regionLimit) {
-
-			landClaimTest(e);
+			//RegionHandling.landClaimTest(e);
+			RegionHandling.claimArea(e);
 
 		} else if (e.getBlock().getType().equals(StaticVariables.getMaterial())) {
 			e.getPlayer().sendMessage(ChatColor.RED + "Your trying to claim too much land!");
@@ -64,20 +65,18 @@ public class Events {
 		}
 	}
 
-
-
-
-
 	@EventHandler
 	public void blockDestroy(BlockBreakEvent e) {
 
 		// if block broken is a gold block
 		if (e.getBlock().getType().equals(StaticVariables.getMaterial())
 				&& WorldGuardPlugin.inst().canBuild(e.getPlayer(), e.getBlock().getLocation())) {
-			deleteClaimedLand(e);
+			RegionHandling.deleteClaimedLand(e);
 
 		} else if (e.getBlock().getType().equals(StaticVariables.getMaterial())
 				&& !WorldGuardPlugin.inst().canBuild(e.getPlayer(), e.getBlock().getLocation()))
 			e.setCancelled(false);
 	}
+	
+	
 }

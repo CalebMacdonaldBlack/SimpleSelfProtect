@@ -10,16 +10,16 @@ import org.bukkit.inventory.meta.ItemMeta;
 
 public class ItemMetaSet {
 
-	public ItemMeta getMeta() {
+	public static ItemMeta getMeta() {
 
-		ItemStack is = new ItemStack(material);
+		ItemStack is = new ItemStack(StaticVariables.material);
 		ItemMeta meta = is.getItemMeta();
 		meta.setDisplayName(ChatColor.GOLD + "Claim Stone");
 		meta.setLore(getMetaList());
 		return meta;
 	}
 
-	private List<String> getMetaList() {
+	private static List<String> getMetaList() {
 
 		List<String> list = new ArrayList<>();
 		list.add(ChatColor.DARK_GREEN + "Place this block to claim ");

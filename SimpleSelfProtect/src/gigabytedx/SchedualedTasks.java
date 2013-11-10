@@ -41,7 +41,7 @@ public class SchedualedTasks {
 				}
 
 			}
-		}, StaticVariables.getDurationBetweenDataBackup(), StaticVariables.getDurationBetweenDataBackup());
+		}, StaticVariables.getDurationBetweenDataBackup() * 20, StaticVariables.getDurationBetweenDataBackup() * 20);
 		
 	}
 	

@@ -5,7 +5,6 @@ import java.util.List;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.configuration.Configuration;
-import org.bukkit.plugin.PluginDescriptionFile;
 import com.sk89q.worldedit.BlockVector;
 
 public class StaticVariables {
@@ -17,8 +16,7 @@ public class StaticVariables {
 	public static boolean		debugModeEnabled;
 	public static Configuration	conf;
 	public static int			durationBetweenDataBackup;
-	static List<region>			regions	= new ArrayList<region>();
-	public static PluginDescriptionFile	pdfFile	= plugin.getDescription();
+	static List<RegionData>			regions	= new ArrayList<RegionData>();
 	public static String regionsSaveName = "regions";
 
 	public StaticVariables(Main plugin) {
@@ -81,13 +79,13 @@ public class StaticVariables {
 	}
 
 	
-	public static List<region> getRegions() {
+	public static List<RegionData> getRegions() {
 	
 		return regions;
 	}
 
 	
-	public static void setRegions(List<region> regions) {
+	public static void setRegions(List<RegionData> regions) {
 	
 		StaticVariables.regions = regions;
 	}
